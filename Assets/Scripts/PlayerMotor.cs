@@ -23,6 +23,9 @@ public class PlayerMotor : MonoBehaviour
     [SerializeField]
     private float WeaponAccuracy = 25f;
 
+    [SerializeField]
+    private float animationSmoothTime = 0.1f;
+
     private CharacterController controller;
     private Vector3 playerVelocity;
     private PlayerInput playerinput;
@@ -35,6 +38,13 @@ public class PlayerMotor : MonoBehaviour
 
     private InputAction shootAction;
 
+    private Animator animator;
+    int moveXAnimatonParameterId;
+    int moveZAnimatonParameterId;
+
+    Vector2 currentAnimationBlendVector;
+    Vector2 animationVelocity;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -46,6 +56,10 @@ public class PlayerMotor : MonoBehaviour
         shootAction = playerinput.actions["Shoot"];
 
         Cursor.lockState = CursorLockMode.Locked;
+
+        animator = GetComponent<Animator>();
+        moveXAnimatonParameterId = Animator.StringToHash("MoveX");
+        moveXAnimatonParameterId = Animator.StringToHash("MoveZ");
     }
 
     private void OnEnable()
@@ -86,10 +100,15 @@ public class PlayerMotor : MonoBehaviour
             playerVelocity.y = 0f;
         }
         Vector2 input = moveAction.ReadValue<Vector2>();
-        Vector3 move = new Vector3(input.x, 0, input.y);
+        currentAnimationBlendVector = Vector2.SmoothDamp(currentAnimationBlendVector, input, ref animationVelocity, animationSmoothTime);
+
+        Vector3 move = new Vector3(currentAnimationBlendVector.x, 0, currentAnimationBlendVector.y);
         move = move.x * cameraTransform.right.normalized + move.z * cameraTransform.forward.normalized;
         move.y = 0f;
         controller.Move(move * Time.deltaTime * playerSpeed);
+
+        animator.SetFloat(moveXAnimatonParameterId, currentAnimationBlendVector.x);
+        animator.SetFloat(moveXAnimatonParameterId, currentAnimationBlendVector.y);
 
 
         // Changes the height position of the player..
